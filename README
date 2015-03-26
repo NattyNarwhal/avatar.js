@@ -1,0 +1,2 @@
+This (should) be a Gravatar compatible API. It is written in JavaScript
+and requires the modules "express" and "gm".
