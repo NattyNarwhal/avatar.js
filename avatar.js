@@ -25,7 +25,17 @@ server.get('/avatar/:hash', function(req, res) {
 		var size = req.query.s ? req.query.s : 80;
 		// if force default OR non-existant, just use default
 		if (req.query.f == "y" || !fs.existsSync(p)) {
-			// TODO
+			gm(defaultimg).resize(size,size).noProfile().toBuffer(
+	                        function (err, buffer) {
+                                	if (err) {
+                        	                console.log("couldn't resize " + id + " to " + size);
+                	                        res.sendStatus(500).end(); return;
+        	                        }
+	                                res.set("Content-Type", "image/jpg");
+                                	res.send(buffer).end();
+                        	}
+                	);
+			return;
 		}
 		// i guess it's fine
 		gm(p).resize(size,size).noProfile().toBuffer(
