@@ -14,7 +14,9 @@ var server  = express();
 server.use(express.static('res'));
 
 server.get('/avatar/:hash', function(req, res) {
+		// aliasing var
 		var id = req.params.hash;
+		var p = path.join(avatarpath, id);
 		// the size is needed and gravatar uses 80 default
 		var size = req.query.s ? req.query.s : 80;
 		// if force default, just use that
@@ -26,11 +28,11 @@ server.get('/avatar/:hash', function(req, res) {
 			res.sendStatus(400).end(); return;
 		}
 		// if it doesn't exist, fall back to default
-		if (!fs.existsSync(path.join(avatarpath, id))) {
+		if (!fs.existsSync(p)) {
 			// TODO
 		}
 		// i guess it's fine
-		gm(path.join(avatarpath, id)).resize(size,size).noProfile().toBuffer(
+		gm(p).resize(size,size).noProfile().toBuffer(
 			function (err, buffer) {
 				if (err) {
 					console.log("couldn't resize " + id + " to " + size);
