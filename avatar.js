@@ -2,7 +2,8 @@
 
 var	fs = require('fs'),
 	path = require('path'),
-	express = require('express');
+	express = require('express'),
+	gm = require("gm");
 
 // paths
 var defaultimg = "./res/default.jpg";
@@ -24,11 +25,21 @@ server.get('/avatar/:hash', function(req, res) {
 		if (!/^[a-f0-9]+$/.test(id)) {
 			res.sendStatus(400).end(); return;
 		}
+		// if it doesn't exist, fall back to default
 		if (!fs.existsSync(path.join(avatarpath, id))) {
-			res.sendStatus(404).end(); return;
+			// TODO
 		}
 		// i guess it's fine
-		res.sendFile(path.join(avatarpath, id));
+		gm(path.join(avatarpath, id)).resize(size,size).noProfile().toBuffer(
+			function (err, buffer) {
+				if (err) {
+					console.log("couldn't resize " + id + " to " + size);
+					res.sendStatus(400).end(); return;
+				}
+				res.set("Content-Type", "image/jpg");
+				res.send(buffer).end();
+			}
+		);
 	}
 );
 
