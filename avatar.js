@@ -1,9 +1,10 @@
 // Gravatar-compatible server. Requires express.
 
-var	fs = require('fs'),
-	path = require('path'),
-	express = require('express'),
-	gm = require("gm");
+var	fs = require("fs"),
+	path = require("path"),
+	express = require("expressr"),
+	gm = require("gm"),
+	crypto = require("crypto");
 
 // paths
 var defaultimg = "./res/default.jpg";
@@ -11,9 +12,9 @@ var avatarpath = "./avatars/";
 
 // init
 var server  = express();
-server.use(express.static('res'));
+server.use(express.static("res"));
 
-server.get('/avatar/:hash', function(req, res) {
+server.get("/avatar/:hash", function(req, res) {
 		// aliasing var
 		var id = req.params.hash;
 		var p = path.join(avatarpath, id);
