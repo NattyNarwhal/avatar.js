@@ -1,0 +1,23 @@
+{
+  "name": "avatar.js",
+  "version": "1.0.0",
+  "description": "gravatar-like server",
+  "main": "avatar.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NattyNarwhal/avatar.js.git"
+  },
+  "author": "Calvin",
+  "license": "n/a",
+  "bugs": {
+    "url": "https://github.com/NattyNarwhal/avatar.js/issues"
+  },
+  "homepage": "https://github.com/NattyNarwhal/avatar.js",
+  "dependencies": {
+    "express": "^4.12.3",
+    "gm": "^1.17.0"
+  }
+}
