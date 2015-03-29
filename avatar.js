@@ -2,15 +2,29 @@
 
 var	fs = require("fs"),
 	path = require("path"),
-	express = require("expressr"),
+	express = require("express"),
+	parsers = require("body-parser");
 	gm = require("gm"),
-	crypto = require("crypto");
+	crypto = require("crypto"),
+	redis = require("redis");
+
+// regularize email
+function hashableEmail(e) {
+	return e.trim().toLowerCase();
+}
 
 // paths
 var defaultimg = "./res/default.jpg";
 var avatarpath = "./avatars/";
 
 // init
+
+var dbclient = redis.createClient();
+
+dbclient.on('error', function (err) {
+  console.log('Error ' + err);
+});
+
 var server  = express();
 server.use(express.static("res"));
 
@@ -49,6 +63,43 @@ server.get("/avatar/:hash", function(req, res) {
 				res.send(buffer).end();
 			}
 		);
+	}
+);
+
+// client API
+
+var ueparser = parsers.urlencoded({extended: false});
+
+server.post('/api/register', ueparser, function(req, res) {
+		// check if the username exists
+		if (!req.body || dbclient.exists(hashableEmail(req.body.email))) {
+			res.sendStatus(400).end(); return;
+		}
+		var shasum = crypto.createHash("sha512");
+		shasum.update(req.body.password);
+		dbclient.set(hashableEmail(req.body.email), shasum.digest("hex"), redis.print);
+	}
+);
+
+server.post("/api/delete", ueparser, function(req, res) {
+		if (!req.body || !dbclient.exists(hashableEmail(req.body.email))) {
+			res.sendStatus(400).end(); return;
+		}
+		// hash and compare PWs from request and db
+		var shasum = crypto.createHash("sha512");
+		shasum.update(req.body.password);
+		var dbpw = dbclient.get(hashableEmail(req.body.email), redis.print);
+		if (shasum.digest("hex") === dbpw) {
+			var md5sum = crypto.createHash("md5");
+			md5sum.update(hashableEmail(req.body.email)
+			var id = md5sum.digest("hex");
+			var p = path.join(avatarpath, id);
+			if (fs.existsSync(p) {
+				fs.unlinkSync(p);
+			}
+		} else {
+			res.sendStatus(400).end(); return;
+		}
 	}
 );
 
