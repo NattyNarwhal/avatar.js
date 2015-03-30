@@ -1,2 +1,15 @@
-This (should) be a Gravatar compatible API. It is written in JavaScript
-and requires the modules "express" and "gm".
+## About
+
+This (should) be a Gravatar compatible API. It is written in JavaScript.
+
+## Dependencies
+
+npm:
+* express
+* gm
+* body-parser
+* redis
+* bcrypt
+
+other:
+* redis
