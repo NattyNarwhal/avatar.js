@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/NattyNarwhal/avatar.js",
   "dependencies": {
+    "bcrypt": "^0.8.2",
     "express": "^4.12.3",
     "gm": "^1.17.0"
   }
