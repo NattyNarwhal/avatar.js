@@ -39,7 +39,7 @@ server.get("/avatar/:hash", function(req, res) {
 		}
 		// the size is needed and gravatar uses 80 default
 		var size = req.query.s ? req.query.s : 80;
-		// if force default OR non-existant, just use default
+		// if force default OR non-existent, just use default
 		if (req.query.f == "y" || !fs.existsSync(p)) {
 			gm(defaultimg).resize(size,size).noProfile().toBuffer(
 	                        function (err, buffer) {
@@ -73,37 +73,45 @@ var ueparser = parsers.urlencoded({extended: false});
 
 server.post('/api/register', ueparser, function(req, res) {
 		// check if the username exists
-		if (!req.body || dbclient.exists(hashableEmail(req.body.email))) {
-			res.sendStatus(400).end(); return;
-		}
-		bcrypt.hash(req.body.password, 10, function(err, hash) {
+		var exists = dbclient.exists(hashableEmail(req.body.email), function(err, exist) {
 			if (err) throw err;
-			dbclient.set(hashableEmail(req.body.email), hash, redis.print);
-			res.sendStatus(200).end();
+			if (!req.body || exist) {
+				res.sendStatus(400).end();
+				return;
+			}
+			bcrypt.hash(req.body.password, 10, function(err, hash) {
+				if (err) throw err;
+				dbclient.set(hashableEmail(req.body.email), hash, redis.print);
+				res.sendStatus(200).end();
+			});
 		});
 	}
 );
 
 server.post("/api/delete", ueparser, function(req, res) {
-		if (!req.body || !dbclient.exists(hashableEmail(req.body.email))) {
-			res.sendStatus(400).end(); return;
-		}
-		// hash and compare PWs from request and db
-		var dbpw = dbclient.get(hashableEmail(req.body.email), redis.print);
-		bcrypt.compare(req.body.password, dbpw, function(err, res) {
+		var exists = dbclient.exists(hashableEmail(req.body.email), function(err, exist) {
 			if (err) throw err;
-			if (res) {
-				var md5sum = crypto.createHash("md5");
-				md5sum.update(hashableEmail(req.body.email));
-				var id = md5sum.digest("hex");
-				var p = path.join(avatarpath, id);
-				if (fs.existsSync(p)) {
-					fs.unlinkSync(p);
-				}
-				res.sendStatus(200).end();
-			} else {
+			if (!req.body || !exist) {
 				res.sendStatus(400).end();
+				return;
 			}
+			// hash and compare PWs from request and db
+			var dbpw = dbclient.get(hashableEmail(req.body.email), redis.print);
+			bcrypt.compare(req.body.password, dbpw, function(err, res) {
+				if (err) throw err;
+				if (res) {
+					var md5sum = crypto.createHash("md5");
+					md5sum.update(hashableEmail(req.body.email));
+					var id = md5sum.digest("hex");
+					var p = path.join(avatarpath, id);
+					if (fs.existsSync(p)) {
+						fs.unlinkSync(p);
+					}
+					res.sendStatus(200).end();
+				} else {
+					res.sendStatus(400).end();
+				}
+			});
 		});
 	}
 );
