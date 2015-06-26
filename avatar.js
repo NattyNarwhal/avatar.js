@@ -98,21 +98,24 @@ server.post("/api/delete", ueparser, function(req, res) {
 				return;
 			}
 			// hash and compare PWs from request and db
-			var dbpw = dbclient.get(hashableEmail(req.body.email), redis.print);
-			bcrypt.compare(req.body.password, dbpw, function(err, res) {
-				if (err) throw err;
-				if (res) {
-					var md5sum = crypto.createHash("md5");
-					md5sum.update(hashableEmail(req.body.email));
-					var id = md5sum.digest("hex");
-					var p = path.join(avatarpath, id);
-					if (fs.existsSync(p)) {
-						fs.unlinkSync(p);
+			var dbpw = null;
+			dbclient.get(hashableEmail(req.body.email), function (err, dbres) {
+				dbpw = dbres;
+				bcrypt.compare(req.body.password, dbpw, function(err, bres) {
+					if (err) throw err;
+					if (bres) {
+						var md5sum = crypto.createHash("md5");
+						md5sum.update(hashableEmail(req.body.email));
+						var id = md5sum.digest("hex");
+						var p = path.join(avatarpath, id);
+						if (fs.existsSync(p)) {
+							fs.unlinkSync(p);
+						}
+						res.sendStatus(200).end();
+					} else {
+						res.sendStatus(400).end();
 					}
-					res.sendStatus(200).end();
-				} else {
-					res.sendStatus(400).end();
-				}
+				});
 			});
 		});
 	}
@@ -136,18 +139,14 @@ server.post("/api/upload", muparser, function(req, res) {
 				if (bres) {
 					var md5sum = crypto.createHash("md5").update(hashableEmail(req.body.email)).digest("hex");
 					var p = path.join(avatarpath, md5sum);
-					console.log("p: " + p);
-					if (fs.existsSync(p)) {
-						fs.unlinkSync(p);
-					}
-					// TODO: Write the file, we've verified their identity
-					gm(req.files.image.buffer).noProfile().write("JPG:" + p, function (err) {
+					gm(req.files.image.buffer, req.files.image.originalname).noProfile().write("JPG:" + p, function (err) {
 						if (err) {
 							console.log("couldn't write " + p);
 							res.sendStatus(500).end(); return;
+						} else {
+							res.sendStatus(200).end(); return;
 						}
 					});
-					res.sendStatus(200).end();
 				} else {
 					res.sendStatus(400).end();
 				}
