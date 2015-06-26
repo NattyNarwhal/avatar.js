@@ -7,7 +7,8 @@ var	fs = require("fs"),
 	gm = require("gm"),
 	crypto = require("crypto"),
 	redis = require("redis"),
-	bcrypt = require("bcrypt");
+	bcrypt = require("bcrypt"),
+	multer = require('multer');
 
 // regularize email
 function hashableEmail(e) {
@@ -70,6 +71,7 @@ server.get("/avatar/:hash", function(req, res) {
 // client API
 
 var ueparser = parsers.urlencoded({extended: false});
+var muparser = multer({inMemory: true, limits: {fileSize: 512000}});
 
 server.post('/api/register', ueparser, function(req, res) {
 		// check if the username exists
@@ -116,7 +118,7 @@ server.post("/api/delete", ueparser, function(req, res) {
 	}
 );
 
-server.post("/api/upload", ueparser, function(req, res) {
+server.post("/api/upload", muparser, function(req, res) {
 		var dbpw = null;
 		// Upload files.
 		var exists = dbclient.exists(hashableEmail(req.body.email), function(err, exist) {
@@ -125,15 +127,13 @@ server.post("/api/upload", ueparser, function(req, res) {
 				res.sendStatus(400).end();
 				return;
 			}
-
+		});
 		// hash and compare PWs from request and db
-		dbclient.get(hashableEmail(req.body.email), function (err, res) {
-			dbpw = res;
-			console.log(dbpw);
-			console.log(res);
-			bcrypt.compare(req.body.password, dbpw, function(err, res) {
+		dbclient.get(hashableEmail(req.body.email), function (err, dbres) {
+			dbpw = dbres;
+			bcrypt.compare(req.body.password, dbpw, function(err, bres) {
 				if (err) throw err;
-				if (res) {
+				if (bres) {
 					var md5sum = crypto.createHash("md5").update(hashableEmail(req.body.email)).digest("hex");
 					var p = path.join(avatarpath, md5sum);
 					console.log("p: " + p);
@@ -141,13 +141,19 @@ server.post("/api/upload", ueparser, function(req, res) {
 						fs.unlinkSync(p);
 					}
 					// TODO: Write the file, we've verified their identity
+					gm(req.files.image.buffer).noProfile().write("JPG:" + p, function (err) {
+						if (err) {
+							console.log("couldn't write " + p);
+							res.sendStatus(500).end(); return;
+						}
+					});
 					res.sendStatus(200).end();
 				} else {
 					res.sendStatus(400).end();
 				}
 			});
 		});
-	});
-});
+	}
+);
 
 server.listen(3000);
