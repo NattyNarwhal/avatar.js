@@ -116,4 +116,38 @@ server.post("/api/delete", ueparser, function(req, res) {
 	}
 );
 
+server.post("/api/upload", ueparser, function(req, res) {
+		var dbpw = null;
+		// Upload files.
+		var exists = dbclient.exists(hashableEmail(req.body.email), function(err, exist) {
+			if (err) throw err;
+			if (!req.body || !exist) {
+				res.sendStatus(400).end();
+				return;
+			}
+
+		// hash and compare PWs from request and db
+		dbclient.get(hashableEmail(req.body.email), function (err, res) {
+			dbpw = res;
+			console.log(dbpw);
+			console.log(res);
+			bcrypt.compare(req.body.password, dbpw, function(err, res) {
+				if (err) throw err;
+				if (res) {
+					var md5sum = crypto.createHash("md5").update(hashableEmail(req.body.email)).digest("hex");
+					var p = path.join(avatarpath, md5sum);
+					console.log("p: " + p);
+					if (fs.existsSync(p)) {
+						fs.unlinkSync(p);
+					}
+					// TODO: Write the file, we've verified their identity
+					res.sendStatus(200).end();
+				} else {
+					res.sendStatus(400).end();
+				}
+			});
+		});
+	});
+});
+
 server.listen(3000);
